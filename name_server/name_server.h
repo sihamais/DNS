@@ -10,7 +10,7 @@
 
 typedef struct name_server
 {
-	char domain[5];
+	char domain[100];
 	char addr_ip[45];
 	int port;
 } name_server;
