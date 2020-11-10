@@ -20,13 +20,13 @@ typedef struct name_server
 	int port;
 } name_server;
 
-int main(int argc, char *argv[])
+int main(int argc, char ** argv)
 {
-	int len, fd, i = 0;
+	int len, fd, i=0 ,j = 0;
 	ssize_t n;
-	char *buff;
-	char *occur;
-
+	char c;
+	char * buff;
+	
 	struct root_server *rs_tab;
 	rs_tab = malloc(1000 * sizeof(root_server));
 
@@ -37,41 +37,31 @@ int main(int argc, char *argv[])
 
 	fd = open(argv[1], O_RDONLY);
 
-	len = lseek(fd, 0, SEEK_END);
-	lseek(fd, SEEK_SET, 0);
-	printf("file size : %d", len);
-
-	while ((n = read(fd, &buff, 1)) > 0)
+	while ((n = read(fd, &c, 1)) > 0)
 	{
-		if (buff[n] == '|' )
+		if (c == '|')
 		{
 			struct root_server rs;
-			memcpy(rs_tab[i].addr_ip, buff, n);
-			lseek(fd, SEEK_CUR, 1);
+			buff[j]='\0';
+			strcpy(rs_tab[i].addr_ip, buff);
+			printf("%s\n", rs_tab[i].addr_ip);
+			j = 0;
 		}
-		if (buff[n] == '\n'){
+		else if (c == '\n' || c == EOF ){
 			char temp[6];
-			memcpy(temp, buff, n);
+			buff[j]='\0';
+			strcpy(temp, buff);
 			rs_tab[i].port = atoi(temp);
-			lseek(fd, SEEK_CUR, 1);
+			printf("%d\n", rs_tab[i].port);
+			j = 0;
 			i++;
+		}
+		else {
+			buff[j] = c;
+			j++;
 		}
 	}
 
-	// while (buff[0] != '\0')
-	// {
-	// 	struct root_server rs;
-	// 	occur = strchr(buff, '|');
-	// 	occur[0] = '\0';
-	// 	memcpy(rs_tab[i].addr_ip, buff, occur - buff + 1);
-	// 	buff = occur + 1;
-	// 	occur = strchr(buff, '\n');
-	// 	occur[0] = '\0';
-	// 	memcpy(temp, buff, occur - buff + 1);
-	// 	rs_tab[i].port = atoi(temp);
-	// 	buff = occur + 1;
-	// 	i++;
-	// }
 	close(fd);
 	return 0;
 }
