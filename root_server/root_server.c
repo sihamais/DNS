@@ -1,13 +1,13 @@
 #include "root_server.h"
 
-struct root_server * readFileRoot(char *filename)
+struct root_server * readFileRoot(char * filename)
 {
     int fd, i = 0, j = 0;
     ssize_t n;
     char c;
     char *buff;
 
-    struct root_server *rs_tab;
+    struct root_server * rs_tab;
     rs_tab = malloc(1000 * sizeof(root_server));
 
     fd = open(filename, O_RDONLY);
@@ -18,16 +18,12 @@ struct root_server * readFileRoot(char *filename)
         {
             buff[j] = '\0';
             strcpy(rs_tab[i].addr_ip, buff);
-            printf("%s\n", rs_tab[i].addr_ip);
             j = 0;
         }
-        else if (c == '\n' || n == 0)
+        else if (c == '\n')
         {
-            char temp[6];
             buff[j] = '\0';
-            strcpy(temp, buff);
-            rs_tab[i].port = atoi(temp);
-            printf("%d\n", rs_tab[i].port);
+            rs_tab[i].port = atoi(buff);
             j = 0;
             i++;
         }
@@ -37,19 +33,23 @@ struct root_server * readFileRoot(char *filename)
             j++;
         }
     }
-
-    char temp[6];
     buff[j] = '\0';
-    strcpy(temp, buff);
-    rs_tab[i].port = atoi(temp);
-    printf("%d\n", rs_tab[i].port);
+    rs_tab[i].port = atoi(buff);
     i++;
 
     close(fd);
     return rs_tab;
 }
 
-void freeMemory(struct root_server * rs_tab)
-{
+int main(int argc, char ** argv){
+    struct root_server * rs_tab;
+    rs_tab = readFileRoot(argv[1]);
+
+    printf("Liste de serveurs racines:\n");
+    for (int i = 0; i < 1000 && rs_tab[i].port != 0; i++){
+        printf("\n serveur %d :\n    adresse ip : %s\n    port : %d\n\n",i, rs_tab[i].addr_ip, rs_tab[i].port);
+    }
+
     free(rs_tab);
+    return 1;
 }

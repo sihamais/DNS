@@ -1,38 +1,42 @@
 #include "name_server.h"
 
-struct name_server * readFileName(char *filename)
+struct name_server *readFileName(char *filename)
 {
     int fd, i = 0, j = 0;
     ssize_t n;
     char c;
     char *buff;
 
-    struct name_server * ns_tab;
+    struct name_server *ns_tab;
     ns_tab = malloc(1000 * sizeof(name_server));
 
-    fd = open(filename, O_RDONLY);
+    fd = open(filename, O_RDONLY, 0666);
 
     while ((n = read(fd, &c, 1)) > 0)
     {
         if (c == '|')
         {
+            printf("i : %d, ", i);
             buff[j] = '\0';
-            if (!isdigit(buff[0]))
+            if (isdigit(buff[0]))
             {
-                strcpy(ns_tab[i].domain, buff);
+                strcpy(ns_tab[i].addr_ip, buff);
+                printf("%s\n", ns_tab[i].addr_ip);
             }
             else
             {
-                strcpy(ns_tab[i].addr_ip, buff);
+                strcpy(ns_tab[i].domain, buff);
+                printf("%s\n", ns_tab[i].domain);
             }
             j = 0;
         }
-        else if (c == '\n' || n == 0)
+        else if (c == '\n')
         {
             char temp[6];
             buff[j] = '\0';
             strcpy(temp, buff);
             ns_tab[i].port = atoi(temp);
+            printf("%d\n", ns_tab[i].port);
             j = 0;
             i++;
         }
@@ -43,28 +47,28 @@ struct name_server * readFileName(char *filename)
         }
     }
 
-    char temp[6];
-    buff[j] = '\0';
-    strcpy(temp, buff);
-    ns_tab[i].port = atoi(temp);
-    i++;
+    // char temp[6];
+    // buff[j] = '\0';
+    // strcpy(temp, buff);
+    // ns_tab[i].port = atoi(temp);
+    // printf("%d\n\n", ns_tab[i].port);
+    // i++;
 
     close(fd);
     return ns_tab;
 }
 
-void freeMemory(struct name_server * ns_tab)
+int main(int argc, char **argv)
 {
-    free(ns_tab);
-}
+    struct name_server *ns_tab;
+    ns_tab = readFileName(argv[1]);
 
-int main(int argc, char ** argv){
-    struct name_server * ns_tab;
-    ns_tab = readFileName("name_server.txt");
     printf("Liste de serveurs noms:\n");
-    printf("{\n serveur 1:\n");
-    printf("    domaine : %s\n    adresse ip : %s\n    port : %d\n},\n",ns_tab[0].domain, ns_tab[0].addr_ip, ns_tab[0].port);
-    printf("{\n serveur 2:\n");
-    printf("    domaine : %s\n    adresse ip : %s\n    port : %d\n}\n",ns_tab[1].domain, ns_tab[1].addr_ip, ns_tab[1].port);
+    for (int i = 0; i < 1000 && ns_tab[i].port != 0; i++)
+    {
+        printf("{\n serveur %d:\n    domaine : %s\n    adresse ip : %s\n    port : %d\n},\n", i, ns_tab[i].domain, ns_tab[i].addr_ip, ns_tab[i].port);
+    }
+
+    free(ns_tab);
     return 1;
 }

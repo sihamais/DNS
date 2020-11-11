@@ -14,4 +14,3 @@ typedef struct root_server
 } root_server;
 
 struct root_server * readFileRoot(char * filename);
-void freeMemory();

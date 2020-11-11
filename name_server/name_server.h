@@ -16,4 +16,3 @@ typedef struct name_server
 } name_server;
 
 struct name_server * readFileName(char * filename);
-void freeMemory();
