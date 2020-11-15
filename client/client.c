@@ -1,64 +1,174 @@
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <strings.h>
+#include "client.h"
 
 void error(char *msg)
 {
-	perror(msg);
-	exit(0);
+    perror(msg);
+    exit(0);
 }
 
-int main(int argc, char *argv[])
+struct client *readFileRoot(char *filename)
 {
-	int sock , length, n;
-	struct sockaddr_in server, from;
-	struct hostent *hp;
-	char buffer[256];
+    int fd, i = 0, j = 0;
+    ssize_t n;
+    char c;
+    char *buff;
 
-	if (argc != 3)
-	{
-		printf("Usage: server port\n");
-		exit(1);
-	}
+    struct client *c_tab;
+    c_tab = malloc(1000 * sizeof(client));
 
-	sock= socket(AF_INET, SOCK_DGRAM, 0);
+    fd = open(filename, O_RDONLY);
 
-	if (sock < 0)
-	{
-		error("socket");
-	}
+    while ((n = read(fd, &c, 1)) > 0)
+    {
+        if (c == '|')
+        {
+            buff[j] = '\0';
+            strcpy(c_tab[i].addr_ip, buff);
+            j = 0;
+        }
+        else if (c == '\n')
+        {
+            buff[j] = '\0';
+            c_tab[i].port = atoi(buff);
+            j = 0;
+            i++;
+        }
+        else
+        {
+            buff[j] = c;
+            j++;
+        }
+    }
+    buff[j] = '\0';
+    c_tab[i].port = atoi(buff);
+    i++;
 
-	server.sin_family = AF_INET;
-	hp = gethostbyname(argv[1]);
+    close(fd);
+    return c_tab;
+}
 
-	if (hp==0)
-	{
-		error("host inconnu");
-	}
+char *request(int sock, struct sockaddr_in server, char *ip, int port, int id, char *name)
+{
+    char * buffer;
+    char * res;
+    int fromlen, length;
+    struct sockaddr_in from;
+    memset(&server, 0, sizeof(server));
+    server.sin_family = AF_INET;
+    server.sin_port = htons(port);
+    server.sin_addr.s_addr = htonl(atoi(ip));
 
-	bcopy((char *)hp->h_addr, (char *)&server.sin_addr,hp->h_length);
-	server.sin_port = htons(atoi(argv[2]));
-	length=sizeof(struct sockaddr_in);
+    fromlen = sizeof(struct sockaddr_in);
 
-	printf("Entrez un message: ");
+    snprintf(buffer, 1024, "%d|%ld|%s", id, time(NULL), name);
 
-	bzero(buffer , 256);
-	fgets(buffer,255,stdin);
-	n = sendto(sock,buffer,strlen(buffer),0,&server,length);
-	if (n < 0)
-	{
-		error("sendto");
-	}
-	n=recvfrom(sock,buffer,256,0, (struct sockaddr *)&from, &length);
-	if (n < 0)
-	{
-		error("recvfrom");
-	}
-	write(1,"GOT AN ACK: ",12);
-	write(1,buffer,n);
+    if (sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *)&server, sizeof(server)) < 0)
+    {
+        error("sendto failed");
+    }
+
+    if (recvfrom(sock, buffer, 256, 0, (struct sockaddr *)&from, &fromlen) < 0)
+    {
+        error("recvfrom failed");
+    }
+
+    printf("%s",buffer);
+
+    return buffer;
+}
+
+struct server_response *parse_server(char *buffer)
+{
+    char *token;
+    char delim1[2] = "|";
+    char delim2[2] = ",";
+
+    struct server_response *res;
+    res = malloc(sizeof(struct server_response));
+
+    res->id = atoi(strtok(buffer, delim1));
+    res->time = atol(strtok(NULL, delim1));
+    res->code = atoi(strtok(NULL, delim1));
+
+    res->server_list = malloc(res->code * sizeof(server));
+
+    for (int i = 0; i < res->code; i++)
+    {
+        token = strtok(NULL, delim1);
+        strcpy(res->server_list[i].domain, strtok(NULL, delim2));
+        strcpy(res->server_list[i].addr_ip, strtok(NULL, delim2));
+        res->server_list[i].port = atoi(strtok(NULL, delim2));
+    }
+
+    return res;
+}
+
+int main(int argc, char **argv)
+{
+    int sock, id = 1, index = 0;
+    char buffer[256];
+    char *received;
+
+    struct server_response *res;
+    struct client *c_tab;
+    struct sockaddr_in server;
+
+    if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    {
+        error("socket");
+    }
+
+    c_tab = readFileRoot(argv[1]);
+
+    if (argc == 2)
+    {
+        printf("Entrez votre requête : ");
+        bzero(buffer, 256);
+        fgets(buffer, 255, stdin);
+
+        char *addr = c_tab[index].addr_ip;
+        int port = c_tab[index].port;
+
+        while (id < 3)
+        {
+            received = request(sock, server, addr, port, id, buffer);
+            res = parse_server(received);
+
+            if (res->code <= 0)
+            {
+                index++;
+                continue;
+            }
+            else if (res->code == 0)
+            {
+                index++;
+                continue;
+            }
+            else
+            {
+                id++;
+                index = 0;
+                addr = res->server_list[index].addr_ip;
+                port = res->server_list[index].port;
+            }
+        }
+    }
+    else if (argc == 3)
+    {
+    }
+    else
+    {
+        printf("Usage:\n    ./client <servers_file>\nor\n    ./client <server_file> <names_file>\n");
+        exit(1);
+    }
+
+    printf("Liste de serveurs racines:\n");
+    for (int i = 0; i < 1000 && c_tab[i].port != 0; i++)
+    {
+        printf("\n serveur %d :\n    adresse ip : %s\n    port : %d\n\n", i, c_tab[i].addr_ip, c_tab[i].port);
+    }
+
+    free(c_tab);
+    close(sock);
+    return 1;
 }
