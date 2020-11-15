@@ -12,7 +12,7 @@ void error(char *msg)
 struct server *readFileName(char * filename)
 {
     int i = 0, j = 1;
-    FILE *fd;
+    FILE * fd;
     char *token;
     char * temp;
     char *buff;
@@ -29,11 +29,14 @@ struct server *readFileName(char * filename)
 
     while (fgets(buff, 100, fd) != NULL)
     {
-        token = strtok(buff, delim1);
-        temp = strtok(buff,delim1);
-        strcpy(s_tab[i].url,token);
+        strcpy(s_tab[i].url, strtok(buff, delim1));
+        strcpy(s_tab[i].addr_ip,strtok(NULL,delim1));
+        s_tab[i].port = atoi(strtok(NULL,delim1));
 
-        while(strtok(temp,delim2)!=NULL){
+        strcpy(temp,s_tab[i].url);
+        strtok(temp, delim2);
+        
+        while(strtok(NULL,delim2)!=NULL){
             j++;
         }
 
@@ -52,8 +55,6 @@ struct server *readFileName(char * filename)
                 strcpy(s_tab[i].child_domain, strtok(NULL,delim2));
                 strcpy(s_tab[i].domain, strtok(NULL,delim2));
         }
-        strcpy(s_tab[i].addr_ip,strtok(NULL,delim1));
-        s_tab[i].port = atoi(strtok(NULL,delim1));
         i++;
     }
 
