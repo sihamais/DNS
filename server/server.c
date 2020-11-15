@@ -9,11 +9,12 @@ void error(char *msg)
 //#######################################################################
 
 // Lecture du fichier des serveurs de noms
-struct server *readFileName(char *filename)
+struct server *readFileName(char * filename)
 {
     int i = 0, j = 1;
     FILE *fd;
     char *token;
+    char * temp;
     char *buff;
     char delim1[2] = "|";
     char delim2[2] = ".";
@@ -26,12 +27,13 @@ struct server *readFileName(char *filename)
         error("fopen");
     }
 
-    while (fgets(buff, 1024, fd))
+    while (fgets(buff, 100, fd) != NULL)
     {
         token = strtok(buff, delim1);
+        temp = strtok(buff,delim1);
         strcpy(s_tab[i].url,token);
 
-        while(strtok(token,delim2)!=NULL){
+        while(strtok(temp,delim2)!=NULL){
             j++;
         }
 
@@ -68,7 +70,6 @@ struct server *readFileName(char *filename)
 
 // Filtrage de la liste des serveurs corresspondant à la requête client
 /*
-bordel dans le strcmp : refaire lecture des serveurs
 completer les differents cas d'id
 */
 struct client_response *getresponse(struct server *s, struct client_response *cr)
@@ -84,11 +85,22 @@ struct client_response *getresponse(struct server *s, struct client_response *cr
             cr->server_list[j].port = s[i].port;
             j++;
         }
-        // else if (cr->id % 3 == 2 && cr->child_domain ==)
-        // {
-        // }
-        else
+        else if (cr->id % 3 == 2 && strcmp(cr->child_domain,s[i].child_domain)== 0)
         {
+            strcpy(cr->server_list[j].domain, s[i].domain);
+            strcpy(cr->server_list[j].child_domain, s[i].child_domain);
+            strcpy(cr->server_list[j].addr_ip, s[i].addr_ip);
+            cr->server_list[j].port = s[i].port;
+            j++;
+        }
+        else if(cr->id % 3 == 0 && strcmp(cr->name,s[i].name)== 0)
+        {  
+            strcpy(cr->server_list[j].name, s[i].name);
+            strcpy(cr->server_list[j].domain, s[i].domain);
+            strcpy(cr->server_list[j].child_domain, s[i].child_domain);
+            strcpy(cr->server_list[j].addr_ip, s[i].addr_ip);
+            cr->server_list[j].port = s[i].port;
+            j++;
         }
     }
 
@@ -112,7 +124,7 @@ struct client_response *parse_client(char *buffer)
     res->time = atol(strtok(NULL, delim1));
     token = strtok(NULL, delim1);
     strtok(NULL, delim2);
-    strcpy(res->name_server, strtok(NULL, delim2));
+    strcpy(res->name, strtok(NULL, delim2));
     strcpy(res->child_domain, strtok(NULL, delim2));
     strcpy(res->domain, strtok(NULL, delim2));
 

@@ -28,7 +28,7 @@ typedef struct client_response{
 	int code;
 	unsigned long time;
 	char * buffer;
-	char * name_server;
+	char * name;
 	char * child_domain;
 	char * domain;
 	struct sockaddr_in * from;
