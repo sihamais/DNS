@@ -1,0 +1,2 @@
+zombie.sihamais.com|127.0.0.1|50067
+www.sihamais.com|127.0.0.1|50039

@@ -15,10 +15,10 @@
 
 typedef struct server
 {
-	char * url;
-	char * name;
-	char * child_domain;
-	char * domain;
+	char url[100];
+	char name[100];
+	char child_domain[100];
+	char domain[100];
 	char addr_ip[45];
 	int port;
 } server;
@@ -27,11 +27,11 @@ typedef struct client_response{
 	int id;
 	int code;
 	unsigned long time;
-	char * buffer;
-	char * name;
-	char * child_domain;
-	char * domain;
-	struct sockaddr_in * from;
+	char buffer[250];
+	char name[100];
+	char child_domain[100];
+	char domain[100];
+	struct sockaddr_in  from;
 	server * server_list;
 }client_response;
 
@@ -39,18 +39,18 @@ typedef struct client_response{
 void error(char *msg);
 
 // Lecture du fichier des serveurs de noms
-struct server * readFileName(char * filename);
+server * readFileName(char * filename);
 
 // Reception de la requete client
-struct client_response *receive(int sock, struct sockaddr_in server, int port);
+client_response *receive(int sock, struct sockaddr_in server, int port);
 
 // Parsing de la requete client
-struct client_response *parse_client(char *buffer);
+client_response *parse_client(char *buffer);
 
 // Filtrage de la liste des serveurs corresspondant à la requête client
-struct client_response *getresponse(struct server *s, struct client_response *cr);
+client_response *getresponse(server *s, client_response *cr);
 
 // Réponse du server avec les sockets
-void respond(int sock, struct sockaddr_in server, struct client_response *cr);
+void respond(int sock, struct sockaddr_in server, client_response *cr);
 
 

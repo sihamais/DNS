@@ -12,6 +12,7 @@
 #include <netdb.h>
 #include <strings.h>
 #include <time.h>
+#include <arpa/inet.h>
 #include "../server/server.h"
 
 typedef struct client

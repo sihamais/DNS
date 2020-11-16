@@ -9,59 +9,54 @@ void error(char *msg)
 //#######################################################################
 
 // Lecture du fichier des serveurs de noms
-struct server *readFileName(char * filename)
+server *readFileName(char *filename)
 {
-    int i = 0, j = 1;
-    FILE * fd;
+    int i = 0, j = 0;
+    FILE *fd;
     char *token;
-    char * temp;
-    char *buff;
+    char temp[1024];
+    char temp2[1024];
+    char buff[1024];
     char delim1[2] = "|";
     char delim2[2] = ".";
 
     struct server *s_tab;
     s_tab = malloc(1000 * sizeof(server));
 
-    if ((fd = fopen(filename, "r")) == NULL)
-    {
-        error("fopen");
-    }
+    fd = fopen(filename, "r");
 
     while (fgets(buff, 100, fd) != NULL)
     {
+        j = 0;
         strcpy(s_tab[i].url, strtok(buff, delim1));
-        strcpy(s_tab[i].addr_ip,strtok(NULL,delim1));
-        s_tab[i].port = atoi(strtok(NULL,delim1));
+        strcpy(s_tab[i].addr_ip, strtok(NULL, delim1));
+        s_tab[i].port = atoi(strtok(NULL, delim1));
 
-        strcpy(temp,s_tab[i].url);
+        strcpy(temp, s_tab[i].url);
+        strcpy(temp2, s_tab[i].url);
+
         strtok(temp, delim2);
-        
-        while(strtok(NULL,delim2)!=NULL){
+        while (strtok(NULL, delim2) != NULL)
+        {
             j++;
         }
 
-        if(j == 2){
-            if (strcmp(strtok(token,delim2),"")==0){
-                strcpy(s_tab[i].domain, strtok(token,delim2));
-            }
-            else
-            {
-                strcpy(s_tab[i].child_domain, strtok(token,delim2));
-                strcpy(s_tab[i].domain, strtok(NULL,delim2));
-            }
+        if (j == 0)
+        {
+            strcpy(s_tab[i].domain, strtok(temp2, delim2));
         }
-        else{
-                strcpy(s_tab[i].name, strtok(token,delim2));
-                strcpy(s_tab[i].child_domain, strtok(NULL,delim2));
-                strcpy(s_tab[i].domain, strtok(NULL,delim2));
+        else if (j == 1)
+        {
+            strcpy(s_tab[i].child_domain, strtok(temp2, delim2));
+            strcpy(s_tab[i].domain, strtok(NULL, delim2));
+        }
+        else
+        {
+            strcpy(s_tab[i].name, strtok(temp2, delim2));
+            strcpy(s_tab[i].child_domain, strtok(NULL, delim2));
+            strcpy(s_tab[i].domain, strtok(NULL, delim2));
         }
         i++;
-    }
-
-    printf("Liste de serveurs noms:\n");
-    for (int i = 0; i < 1000 && s_tab[i].port != 0; i++)
-    {
-        printf("\n serveur %d:\n    domaine : %s\n    adresse ip : %s\n    port : %d\n\n", i + 1, s_tab[i].url, s_tab[i].addr_ip, s_tab[i].port);
     }
 
     fclose(fd);
@@ -70,35 +65,32 @@ struct server *readFileName(char * filename)
 //#######################################################################
 
 // Filtrage de la liste des serveurs corresspondant à la requête client
-/*
-completer les differents cas d'id
-*/
-struct client_response *getresponse(struct server *s, struct client_response *cr)
+client_response *getresponse(server *s, client_response *cr)
 {
     int j = 0;
-
     for (int i = 0; i < 1000 && s[i].port != 0; i++)
     {
-        if (cr->id % 3 == 1 && strcmp(cr->domain, s[i].domain) == 0)
+        printf("%d\n", strcmp(cr->domain, s[i].domain));
+        printf("%s\n", cr->domain);
+        printf("%s\n", s[i].domain);
+
+        if (cr->id % 3 == 1 && strcmp(cr->domain, s[i].domain) == 10)
         {
-            strcpy(cr->server_list[j].domain, s[i].domain);
+            strcpy(cr->server_list[j].url, s[i].url);
             strcpy(cr->server_list[j].addr_ip, s[i].addr_ip);
             cr->server_list[j].port = s[i].port;
             j++;
         }
-        else if (cr->id % 3 == 2 && strcmp(cr->child_domain,s[i].child_domain)== 0)
+        else if (cr->id % 3 == 2 && strcmp(cr->child_domain, s[i].child_domain) == 0)
         {
-            strcpy(cr->server_list[j].domain, s[i].domain);
-            strcpy(cr->server_list[j].child_domain, s[i].child_domain);
+            strcpy(cr->server_list[j].url, s[i].url);
             strcpy(cr->server_list[j].addr_ip, s[i].addr_ip);
             cr->server_list[j].port = s[i].port;
             j++;
         }
-        else if(cr->id % 3 == 0 && strcmp(cr->name,s[i].name)== 0)
-        {  
-            strcpy(cr->server_list[j].name, s[i].name);
-            strcpy(cr->server_list[j].domain, s[i].domain);
-            strcpy(cr->server_list[j].child_domain, s[i].child_domain);
+        else if (cr->id % 3 == 0 && strcmp(cr->name, s[i].name) == 0)
+        {
+            strcpy(cr->server_list[j].url, s[i].url);
             strcpy(cr->server_list[j].addr_ip, s[i].addr_ip);
             cr->server_list[j].port = s[i].port;
             j++;
@@ -111,21 +103,24 @@ struct client_response *getresponse(struct server *s, struct client_response *cr
 //#######################################################################
 
 // Parsing de la requete client
-struct client_response *parse_client(char *buffer)
+client_response *parse_client(char *buffer)
 {
     char *token;
+    char temp[250];
     char delim1[2] = "|";
-    char delim2[2] = ",";
+    char delim2[2] = ".";
 
-    struct client_response *res;
-    res = malloc(sizeof(struct client_response));
-    res->server_list = malloc(1000 * sizeof(struct server));
-    strcpy(res->buffer, buffer);
+    client_response *res;
+    res = malloc(sizeof(client_response));
+    res->server_list = malloc(100 * sizeof(server));
+
     res->id = atoi(strtok(buffer, delim1));
     res->time = atol(strtok(NULL, delim1));
-    token = strtok(NULL, delim1);
-    strtok(NULL, delim2);
-    strcpy(res->name, strtok(NULL, delim2));
+
+    strcpy(temp, strtok(NULL, delim1));
+    strcpy(res->buffer, temp);
+
+    strcpy(res->name, strtok(temp, delim2));
     strcpy(res->child_domain, strtok(NULL, delim2));
     strcpy(res->domain, strtok(NULL, delim2));
 
@@ -134,11 +129,13 @@ struct client_response *parse_client(char *buffer)
 //#######################################################################
 
 // Reception de la requete client
-struct client_response *receive(int sock, struct sockaddr_in server, int port)
+client_response *receive(int sock, struct sockaddr_in server, int port)
 {
-    int fromlen, length;
+    socklen_t fromlen;
+    int length;
+    char buffer[1024];
     struct sockaddr_in from;
-    struct client_response *cr;
+    client_response *cr;
 
     fromlen = sizeof(struct sockaddr_in);
 
@@ -152,69 +149,65 @@ struct client_response *receive(int sock, struct sockaddr_in server, int port)
         error("bind failed");
     }
 
-    char buffer[1024];
     if ((length = recvfrom(sock, buffer, sizeof(buffer) - 1, 0, (struct sockaddr *)&from, &fromlen)) < 0)
     {
         error("recvfrom failed");
     }
-    buffer[length] = '\0';
-    printf("%s\n", buffer);
+    printf("received : %s\n", buffer);
 
     cr = parse_client(buffer);
-    cr->from = &from;
+    cr->from = from;
     return cr;
 }
 //#######################################################################
 
 // Réponse du server avec les sockets
-void respond(int sock, struct sockaddr_in server, struct client_response *cr)
+void respond(int sock, struct sockaddr_in server, client_response *cr)
 {
-    int fromlen;
-    struct sockaddr_in *from;
+    socklen_t fromlen;
+    struct sockaddr_in from;
     from = cr->from;
-    char *resp;
-    char *temp;
+    char resp[1024];
+    char temp[1024];
 
     fromlen = sizeof(struct sockaddr_in);
-
     snprintf(resp, 1024, "%d|%ld|%s|%d", cr->id, cr->time, cr->buffer, cr->code);
 
-    for (int i = 0; i < cr->code + 1; i++)
+    for (int i = 0; i < cr->code; i++)
     {
-        snprintf(temp, 1024, "|%s,%s,%d", cr->server_list[i].domain, cr->server_list[i].addr_ip, cr->server_list[i].port);
+        snprintf(temp, 1024, "|%s,%s,%d", cr->server_list[i].url, cr->server_list[i].addr_ip, cr->server_list[i].port);
         strcat(resp, temp);
     }
     strcat(resp, "\n");
 
-    if (sendto(sock, resp, sizeof(resp), 0, (struct sockaddr *)&from, fromlen) < 0)
+    if (sendto(sock, resp, strlen(resp), 0, (struct sockaddr *)&from, fromlen) < 0)
     {
         error("sendto failed");
     }
-    printf("sendto ok");
+    printf("sent : %s\n", resp);
 }
 //#######################################################################
 
 // Main du programme
 int main(int argc, char **argv)
 {
-    // int sock;
-    // struct sockaddr_in server;
+    int sock;
+    struct sockaddr_in server;
     struct server *s_tab;
-    // struct client_response *res;
+    client_response *res;
 
-    // if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-    // {
-    //     error("Opening socket");
-    // }
+    if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    {
+        error("Opening socket");
+    }
 
-    // res = receive(sock, server, atoi(argv[1]));
-    s_tab = readFileName("server.txt");
-    // res = getresponse(s_tab, res);
-    // respond(sock, server, res);
+    s_tab = readFileName(argv[2]);
+    res = receive(sock, server, atoi(argv[1]));
+    res = getresponse(s_tab, res);
+    respond(sock, server, res);
 
     free(s_tab);
-    // free(res->server_list);
-    // free(res);
-    // close(sock);
+    free(res);
+    close(sock);
     return 1;
 }
