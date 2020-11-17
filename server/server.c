@@ -1,6 +1,9 @@
+/**
+ * \file          server.c
+ * \brief       Fonctionnalités coté serveur
+ */
 #include "server.h"
 
-// Traitement d'erreur
 void error(char *msg)
 {
     perror(msg);
@@ -8,7 +11,6 @@ void error(char *msg)
 }
 //#######################################################################
 
-// Lecture du fichier des serveurs de noms
 server *readFileName(char *filename)
 {
     int i = 0, j = 0;
@@ -63,7 +65,6 @@ server *readFileName(char *filename)
 }
 //#######################################################################
 
-// Filtrage de la liste des serveurs corresspondant à la requête client
 client_response *getresponse(server *s, client_response *cr)
 {
     int j = 0;
@@ -97,7 +98,6 @@ client_response *getresponse(server *s, client_response *cr)
 }
 //#######################################################################
 
-// Parsing de la requete client
 client_response *parse_client(char *buffer)
 {
     char temp[250];
@@ -122,7 +122,6 @@ client_response *parse_client(char *buffer)
 }
 //#######################################################################
 
-// Reception de la requete client
 client_response *receive(int sock, int port)
 {
     struct sockaddr_in server;
@@ -157,7 +156,6 @@ client_response *receive(int sock, int port)
 }
 //#######################################################################
 
-// Réponse du server avec les sockets
 void respond(int sock, client_response *cr)
 {
     socklen_t fromlen;
@@ -183,12 +181,17 @@ void respond(int sock, client_response *cr)
 }
 //#######################################################################
 
-// Main du programme
 int main(int argc, char **argv)
 {
     int sock;
     struct server *s_tab;
     client_response *res;
+
+    if (argc != 3)
+    {
+        printf("Usage:\n    ./server <port> <servers_file>\n");
+        exit(1);
+    }
 
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
     {
@@ -196,9 +199,10 @@ int main(int argc, char **argv)
     }
 
     s_tab = readFileName(argv[2]);
+
     res = receive(sock, atoi(argv[1]));
     res = getresponse(s_tab, res);
-    respond(sock,  res);
+    respond(sock, res);
 
     free(s_tab);
     free(res);

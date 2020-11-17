@@ -1,3 +1,7 @@
+/**
+ * \file          client.c
+ * \brief       Fonctionnalités coté client
+ */
 #include "client.h"
 
 void error(char *msg)
@@ -13,6 +17,7 @@ root_server *readFileRoot(char *filename)
     char buff[1024];
     char delim1[2] = "|";
 
+    // Allocations mémoire des structures
     root_server *rs_tab = malloc(sizeof(root_server));
     rs_tab->server_list = malloc(1000 * sizeof(server));
     rs_tab->size = 0;
@@ -38,6 +43,7 @@ char *request(char *ip, int port, int id, char *name)
     struct sockaddr_in server;
     struct sockaddr_in from;
     socklen_t fromlen;
+
     struct timeval tv;
     tv.tv_sec = 0;
     tv.tv_usec = 10000;
@@ -81,7 +87,6 @@ char *request(char *ip, int port, int id, char *name)
 }
 //#######################################################################
 
-// Parsing de la réponse serveur
 server_response *parse_server(char *buffer)
 {
     int i, j;
@@ -138,7 +143,8 @@ int main(int argc, char **argv)
 
     if (argc == 2)
     {
-        strcpy(buffer, "www.sihamais.com");
+        printf("Entrez le nom à résoudre : \n");
+        scanf("%s", buffer);
 
         for (int i = 0; i < rs_tab->size; i++)
         {
@@ -169,6 +175,45 @@ int main(int argc, char **argv)
             }
         }
     }
+    // else if (argc == 3)
+    // {
+    //     FILE *fd;
+    //     char buffer[1024];
+    //     fd = fopen(argv[1], "r");
+
+    //     while (fgets(buffer, 100, fd) != NULL)
+    //     {
+    //         for (int i = 0; i < rs_tab->size; i++)
+    //         {
+    //             if ((received = request(rs_tab->server_list[i].addr_ip, rs_tab->server_list[i].port, id, buffer)) != NULL)
+    //             {
+    //                 s1 = parse_server(received);
+    //                 for (int j = 0; j < s1->code; j++)
+    //                 {
+    //                     if ((received = request(s1->server_list[j].addr_ip, s1->server_list[j].port, id + 1, buffer)) != NULL)
+    //                     {
+    //                         s2 = parse_server(received);
+    //                         for (int k = 0; k < s2->code; k++)
+    //                         {
+    //                             if ((received = request(s2->server_list[k].addr_ip, s2->server_list[k].port, id + 2, buffer)) != NULL)
+    //                             {
+    //                                 s3 = parse_server(received);
+    //                                 if (s3->code > 0)
+    //                                 {
+    //                                     k = s2->code;
+    //                                     j = s1->code;
+    //                                     i = rs_tab->size;
+    //                                     id += 3;
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }   
+    //     fclose(fd);
+    // }
     else
     {
         printf("Usage:\n    ./client <servers_file>\nor\n    ./client <servers_file> <names_file>\n");

@@ -1,23 +1,21 @@
-CC = gcc
+CC=gcc
+CFLAGS=-Wextra -Wall
 
-all: 
-	dns client.o root.o name.o
+all: clean serverprog clientprog
+	@echo Compiled successfully !
 
-dns : client.o root.o name.o
-	$(CC) -o dns client.o root.o name.o
+serverprog: server/server.c server/server.h
+	$(CC) server/server.c -o server/serv $(CFLAGS)
 
-client.o : client/client.c client/client.h
-	$(CC) -o client.o -c client/client.c 
-
-root.o : root_server/root_server.c root_server/root_server.h
-	$(CC) -o root.o -c root_server/root_server.c 
-
-name.o : name_server/name_server.c name_server/name_server.h
-	$(CC) -o name.o -c name_server/name_server.c 	
-
-dist : 
-	tar -zcvf dns_resolution-AISSAOUI_MAHRAS.tar.xz client/* root_server/* name_server/* Makefile 
+clientprog: client/client.c client/client.h
+	$(CC) client/client.c -o client/cli $(CFLAGS)
 
 clean:
-	@$(RM) -f dns *.o *.tar.xz client/*.out client/*.o root_server/*.out root_server/*.o name_server/*.out name_server/*.o
-	@echo Clean!
+	rm -rf server/serv client/cli html/* latex/* html latex doc.html saissaoui-mahras.tar.gz
+
+dist :  clean
+	tar -zcvf saissaoui-mahras.tar.gz client/* server/* makefile Rapport Doxyfile script
+
+doc: clean
+	doxygen
+	ln -s ./html/index.html ./doc.html

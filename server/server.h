@@ -1,3 +1,13 @@
+/*! \mainpage DNS Projet Algores
+ *
+ * \section intro_sec How to
+ *
+ * Classes pour voir la documentation des structures
+ * 
+ * Files pour voir les fonctions de chaque fichier
+ *
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -13,6 +23,10 @@
 #include <strings.h>
 #include <time.h>
 
+/**
+ * @brief Structure pour stocker les informations des serveurs
+ * 
+ */
 typedef struct server
 {
 	char url[100];
@@ -23,6 +37,10 @@ typedef struct server
 	int port;
 } server;
 
+/**
+ * @brief Structure pour stocker la requête du client
+ * 
+ */
 typedef struct client_response{
 	int id;
 	int code;
@@ -35,22 +53,53 @@ typedef struct client_response{
 	server * server_list;
 }client_response;
 
-// Traitement d'erreur
+/**
+ * @brief Traitement d'erreur
+ * 
+ * @param msg Message à afficher en cas d'erreur
+ */
 void error(char *msg);
 
-// Lecture du fichier des serveurs de noms
+/**
+ * @brief Lecture du fichier des serveurs de noms
+ * 
+ * @param filename Nom de fichier à lire
+ * @return server* 
+ */
 server * readFileName(char * filename);
 
-// Reception de la requete client
+/**
+ * @brief Reception de la requete client
+ * 
+ * @param sock Descripteur de socket
+ * @param port Numéro de port
+ * @return client_response* 
+ */
 client_response *receive(int sock,  int port);
 
-// Parsing de la requete client
+/**
+ * @brief Parsing de la requete client pour pouvoir la stocker dans la structue client_response
+ * 
+ * @param buffer Tableau de char contenant la requête client
+ * @return client_response* 
+ */
 client_response *parse_client(char *buffer);
 
-// Filtrage de la liste des serveurs corresspondant à la requête client
+/**
+ * @brief Filtrage de la liste des serveurs corresspondant à la requête client
+ * 
+ * @param s 
+ * @param cr 
+ * @return client_response* 
+ */
 client_response *getresponse(server *s, client_response *cr);
 
-// Réponse du server avec les sockets
+/**
+ * @brief Réponse du server avec les sockets
+ * 
+ * @param sock 
+ * @param cr 
+ */
 void respond(int sock, client_response *cr);
 
 
