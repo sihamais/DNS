@@ -15,11 +15,11 @@
 #include <arpa/inet.h>
 #include "../server/server.h"
 
-typedef struct client
+typedef struct root_server
 {
-	char addr_ip[45];
-	int port;
-} client;
+	int size;
+	server * server_list;
+} root_server;
 
 typedef struct server_response
 {
@@ -31,7 +31,9 @@ typedef struct server_response
 
 void error(char *msg);
 
-struct client * readFileRoot(char * filename);
+struct root_server * readFileRoot(char * filename);
+
+char *request(char *ip, int port, int id, char *name);
 
 struct server_response * parse_server(char * buffer);
 

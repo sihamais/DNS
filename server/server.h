@@ -42,7 +42,7 @@ void error(char *msg);
 server * readFileName(char * filename);
 
 // Reception de la requete client
-client_response *receive(int sock, struct sockaddr_in server, int port);
+client_response *receive(int sock,  int port);
 
 // Parsing de la requete client
 client_response *parse_client(char *buffer);
@@ -51,6 +51,6 @@ client_response *parse_client(char *buffer);
 client_response *getresponse(server *s, client_response *cr);
 
 // Réponse du server avec les sockets
-void respond(int sock, struct sockaddr_in server, client_response *cr);
+void respond(int sock, client_response *cr);
 
 

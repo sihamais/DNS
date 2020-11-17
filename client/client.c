@@ -7,35 +7,34 @@ void error(char *msg)
 }
 //#######################################################################
 
-client *readFileRoot(char *filename)
+root_server *readFileRoot(char *filename)
 {
-    int i = 0;
     FILE *fd;
     char buff[1024];
     char delim1[2] = "|";
 
-    client *c_tab;
-    c_tab = malloc(1000 * sizeof(client));
+    root_server *rs_tab = malloc(sizeof(root_server));
+    rs_tab->server_list = malloc(1000 * sizeof(server));
+    rs_tab->size = 0;
 
     fd = fopen(filename, "r");
 
     while (fgets(buff, 100, fd) != NULL)
     {
-        strcpy(c_tab[i].addr_ip, strtok(buff, delim1));
-        c_tab[i].port = atoi(strtok(NULL, delim1));
-        i++;
+        strcpy(rs_tab->server_list[rs_tab->size].addr_ip, strtok(buff, delim1));
+        rs_tab->server_list[rs_tab->size].port = atoi(strtok(NULL, delim1));
+        rs_tab->size++;
     }
 
     fclose(fd);
-    return c_tab;
+    return rs_tab;
 }
 //#######################################################################
 
 char *request(char *ip, int port, int id, char *name)
 {
-    int sock, length;
+    int sock;
     char *buffer = malloc(20000 * sizeof(char));
-    char *res;
     struct sockaddr_in server;
     struct sockaddr_in from;
     socklen_t fromlen;
@@ -125,49 +124,48 @@ server_response *parse_server(char *buffer)
 
 int main(int argc, char **argv)
 {
-    int id = 1, index = 0,i=0;
+    int id = 1;
     char buffer[255];
     char *received;
 
-    server_response *res;
-    client *c_tab;
+    root_server *rs_tab;
+    server_response *s1;
+    server_response *s2;
+    server_response *s3;
 
-    c_tab = readFileRoot(argv[1]);
-    memset(buffer, 0, strlen(buffer));
+    rs_tab = readFileRoot(argv[1]);
+    buffer[0] = '\0';
 
     if (argc == 2)
     {
         strcpy(buffer, "www.sihamais.com");
 
-        char *addr = c_tab[index].addr_ip;
-        int port = c_tab[index].port;
-
-        while(i<3)
+        for (int i = 0; i < rs_tab->size; i++)
         {
-            received = request(addr, port, id, buffer);
-            if (received != NULL)
+            if ((received = request(rs_tab->server_list[i].addr_ip, rs_tab->server_list[i].port, id, buffer)) != NULL)
             {
-                res = parse_server(received);
-
-                if (res->code > 0)
+                s1 = parse_server(received);
+                for (int j = 0; j < s1->code; j++)
                 {
-                    id++;
-                    i++;
-                    index = 0;
-                    addr = res->server_list[index].addr_ip;
-                    port = res->server_list[index].port;
+                    if ((received = request(s1->server_list[j].addr_ip, s1->server_list[j].port, id + 1, buffer)) != NULL)
+                    {
+                        s2 = parse_server(received);
+                        for (int k = 0; k < s2->code; k++)
+                        {
+                            if ((received = request(s2->server_list[k].addr_ip, s2->server_list[k].port, id + 2, buffer)) != NULL)
+                            {
+                                s3 = parse_server(received);
+                                if (s3->code > 0)
+                                {
+                                    k = s2->code;
+                                    j = s1->code;
+                                    i = rs_tab->size;
+                                    id += 3;
+                                }
+                            }
+                        }
+                    }
                 }
-                else
-                {
-                    index++;
-                }
-            }
-            else
-            {
-                printf("ici\n");
-                index++;
-                printf("%s|", res->server_list[1].addr_ip);
-                printf("%d",res->server_list[1].port);
             }
         }
     }
@@ -177,8 +175,12 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    free(c_tab);
-    free(res->server_list);
-    free(res);
+    free(s1->server_list);
+    free(s2->server_list);
+    free(s3->server_list);
+    free(s1);
+    free(s2);
+    free(s3);
+    free(rs_tab);
     return 1;
 }

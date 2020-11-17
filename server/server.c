@@ -13,7 +13,6 @@ server *readFileName(char *filename)
 {
     int i = 0, j = 0;
     FILE *fd;
-    char *token;
     char temp[1024];
     char temp2[1024];
     char buff[1024];
@@ -101,7 +100,6 @@ client_response *getresponse(server *s, client_response *cr)
 // Parsing de la requete client
 client_response *parse_client(char *buffer)
 {
-    char *token;
     char temp[250];
     char delim1[2] = "|";
     char delim2[2] = ".";
@@ -125,8 +123,9 @@ client_response *parse_client(char *buffer)
 //#######################################################################
 
 // Reception de la requete client
-client_response *receive(int sock, struct sockaddr_in server, int port)
+client_response *receive(int sock, int port)
 {
+    struct sockaddr_in server;
     socklen_t fromlen;
     int length;
     char buffer[1024];
@@ -159,7 +158,7 @@ client_response *receive(int sock, struct sockaddr_in server, int port)
 //#######################################################################
 
 // Réponse du server avec les sockets
-void respond(int sock, struct sockaddr_in server, client_response *cr)
+void respond(int sock, client_response *cr)
 {
     socklen_t fromlen;
     struct sockaddr_in from;
@@ -188,7 +187,6 @@ void respond(int sock, struct sockaddr_in server, client_response *cr)
 int main(int argc, char **argv)
 {
     int sock;
-    struct sockaddr_in server;
     struct server *s_tab;
     client_response *res;
 
@@ -198,9 +196,9 @@ int main(int argc, char **argv)
     }
 
     s_tab = readFileName(argv[2]);
-    res = receive(sock, server, atoi(argv[1]));
+    res = receive(sock, atoi(argv[1]));
     res = getresponse(s_tab, res);
-    respond(sock, server, res);
+    respond(sock,  res);
 
     free(s_tab);
     free(res);
