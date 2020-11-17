@@ -70,11 +70,7 @@ client_response *getresponse(server *s, client_response *cr)
     int j = 0;
     for (int i = 0; i < 1000 && s[i].port != 0; i++)
     {
-        printf("%d\n", strcmp(cr->domain, s[i].domain));
-        printf("%s\n", cr->domain);
-        printf("%s\n", s[i].domain);
-
-        if (cr->id % 3 == 1 && strcmp(cr->domain, s[i].domain) == 10)
+        if (cr->id % 3 == 1 && strcmp(cr->domain, s[i].domain) == 0)
         {
             strcpy(cr->server_list[j].url, s[i].url);
             strcpy(cr->server_list[j].addr_ip, s[i].addr_ip);
@@ -140,6 +136,7 @@ client_response *receive(int sock, struct sockaddr_in server, int port)
     fromlen = sizeof(struct sockaddr_in);
 
     memset(&server, 0, sizeof(server));
+    memset(buffer, 0, strlen(buffer));
     server.sin_family = AF_INET;
     server.sin_port = htons(port);
     server.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -178,13 +175,12 @@ void respond(int sock, struct sockaddr_in server, client_response *cr)
         snprintf(temp, 1024, "|%s,%s,%d", cr->server_list[i].url, cr->server_list[i].addr_ip, cr->server_list[i].port);
         strcat(resp, temp);
     }
-    strcat(resp, "\n");
 
     if (sendto(sock, resp, strlen(resp), 0, (struct sockaddr *)&from, fromlen) < 0)
     {
         error("sendto failed");
     }
-    printf("sent : %s\n", resp);
+    printf("sent : %s\n\n", resp);
 }
 //#######################################################################
 
