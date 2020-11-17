@@ -24,9 +24,10 @@ server *readFileName(char *filename)
     struct server *s_tab;
     s_tab = malloc(1000 * sizeof(server));
 
-    fd = fopen(filename, "r");
+    fd = fopen(filename, "r");     // Ouverture du fichier
 
-    while (fgets(buff, 100, fd) != NULL)
+
+    while (fgets(buff, 100, fd) != NULL) // Lecture du fichier ligne par ligne
     {
         j = 0;
         strcpy(s_tab[i].url, strtok(buff, delim1));
