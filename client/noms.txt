@@ -1,2 +1,2 @@
-www.sihamais.com
-zombie.sihamais.com
+www.c.com
+zombie.c.com

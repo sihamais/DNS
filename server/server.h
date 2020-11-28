@@ -40,6 +40,7 @@ typedef struct server
 	char domain[100];
 	char addr_ip[45];
 	int port;
+	int on;
 } server;
 
 /**
