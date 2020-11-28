@@ -49,9 +49,9 @@ char *request(int sock, char *ip, int port, int id, char *name)
     tv.tv_usec = 10000;
 
     memset(&server, 0, sizeof(server));
-    server.sin_family = AF_INET;   // Initialisation du numéro de port passé en paramètre
-    server.sin_port = htons(port); // Initialisation de l'adresse IP passée en paramètre
-    inet_pton(AF_INET, ip, &(server.sin_addr.s_addr));
+    server.sin_family = AF_INET;
+    inet_pton(AF_INET, ip, &(server.sin_addr.s_addr)); // Initialisation de l'adresse IP passée en paramètre
+    server.sin_port = htons(port); // Initialisation du numéro de port passé en paramètre
 
     fromlen = sizeof(struct sockaddr_in);
 
@@ -117,6 +117,7 @@ server_response *parse_server(char *buffer)
         strcpy(res->server_list[j].url, strtok(matches[j], delim2)); // Récupération du nom
         strcpy(res->server_list[j].addr_ip, strtok(NULL, delim2));   // Récupération de l'adresse ip
         res->server_list[j].port = atoi(strtok(NULL, delim2));       // Récupération du numéro de port
+        res->server_list[j].on = 1;
         free(matches[j]);
     }
 
@@ -171,25 +172,25 @@ int main(int argc, char **argv)
                                     k = s2->code;
                                     j = s1->code;
                                     i = rs_tab->size;
+                                    free(s3->server_list);
+                                    free(s3);
+                                    free(s2->server_list);
+                                    free(s2);
+                                    free(s1->server_list);
+                                    free(s1);
                                 }
-                                free(s3->server_list);
-                                free(s3);
                             }
                             else
                             {
                                 s2->server_list[k].on = 0;
                             }
                         }
-                        free(s2->server_list);
-                        free(s2);
                     }
                     else
                     {
                         s1->server_list[j].on = 0;
                     }
                 }
-                free(s1->server_list);
-                free(s1);
             }
             else
             {
@@ -230,25 +231,25 @@ int main(int argc, char **argv)
                                         i = rs_tab->size;
                                         k = s2->code;
                                         j = s1->code;
+                                        free(s3->server_list);
+                                        free(s3);
+                                        free(s2->server_list);
+                                        free(s2);
+                                        free(s1->server_list);
+                                        free(s1);
                                     }
-                                    free(s3->server_list);
-                                    free(s3);
                                 }
                                 else
                                 {
                                     s2->server_list[k].on = 0;
                                 }
                             }
-                            free(s2->server_list);
-                            free(s2);
                         }
                         else
                         {
                             s1->server_list[j].on = 0;
                         }
                     }
-                    free(s1->server_list);
-                    free(s1);
                 }
                 else
                 {
