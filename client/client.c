@@ -186,11 +186,7 @@ int main(int argc, char **argv)
 
         while ((read = getline(&buffer, &len, fd)) >= 0)
         {
-            if (buffer[read-1]== '\n')
-                buffer[read-1] = '\0';
-            else{
-                buffer[read] = '\0';
-            }
+            buffer[strcspn(buffer,"\n")] = '\0';
             
             for (int i = 0; i < rs_tab->size; i++)
             {
