@@ -1,6 +1,6 @@
 /**
- * \file          client.c
- * \brief       Fonctionnalités coté client
+ * @file          client.c
+ * @brief       Fonctionnalités coté client
  */
 #include "client.h"
 
@@ -17,17 +17,17 @@ root_server *readFileRoot(char *filename)
     char buff[1024];
     char delim1[2] = "|";
 
-    root_server *rs_tab = malloc(sizeof(root_server));     // Allocations mémoire des structures
+    root_server *rs_tab = malloc(sizeof(root_server));   // Allocations mémoire des structures
     rs_tab->server_list = malloc(1000 * sizeof(server)); // Allocations mémoire des structures
     rs_tab->size = 0;
 
-    fd = fopen(filename, "r");     // Ouverture du fichier
+    fd = fopen(filename, "r"); // Ouverture du fichier
 
-    while (fgets(buff, 100, fd) != NULL)     // Lecture ligne par ligne du fichier
+    while (fgets(buff, 100, fd) != NULL) // Lecture ligne par ligne du fichier
     {
-        strcpy(rs_tab->server_list[rs_tab->size].addr_ip, strtok(buff, delim1));         // Stockage de l'addresse ip dans la structure root_server
-        rs_tab->server_list[rs_tab->size].port = atoi(strtok(NULL, delim1));         // Stockage du numéro de port dans la structure root_server
-        rs_tab->size++;         // Incrémentation de size pour connaitre le nombre de serveurs
+        strcpy(rs_tab->server_list[rs_tab->size].addr_ip, strtok(buff, delim1)); // Stockage de l'addresse ip dans la structure root_server
+        rs_tab->server_list[rs_tab->size].port = atoi(strtok(NULL, delim1));     // Stockage du numéro de port dans la structure root_server
+        rs_tab->size++;                                                          // Incrémentation de size pour connaitre le nombre de serveurs
     }
 
     fclose(fd);
@@ -35,9 +35,9 @@ root_server *readFileRoot(char *filename)
 }
 //#######################################################################
 
-char *request(char *ip, int port, int id, char *name)
+char *request(int sock, char *ip, int port, int id, char *name)
 {
-    int sock;
+    int length;
     char *buffer = malloc(20000 * sizeof(char));
     struct sockaddr_in server;
     struct sockaddr_in from;
@@ -48,25 +48,20 @@ char *request(char *ip, int port, int id, char *name)
     tv.tv_usec = 10000;
 
     memset(&server, 0, sizeof(server));
-    server.sin_family = AF_INET;         // Initialisation du numéro de port passé en paramètre
-    server.sin_port = htons(port);     // Initialisation de l'adresse IP passée en paramètre
+    server.sin_family = AF_INET;   // Initialisation du numéro de port passé en paramètre
+    server.sin_port = htons(port); // Initialisation de l'adresse IP passée en paramètre
     inet_pton(AF_INET, ip, &(server.sin_addr.s_addr));
 
     fromlen = sizeof(struct sockaddr_in);
 
-    if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0)    // Création du socket
-    {
-        error("socket");
-    }
+    snprintf(buffer, 2000, "%d|%ld|%s", id, time(NULL), name); // Création du message de la requête client
 
-    snprintf(buffer, 2000, "%d|%ld|%s", id, time(NULL), name);     // Création du message de la requête client
-
-    if (sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *)&server, sizeof(server)) < 0)     // Envoi de la requête client au serveur
+    if (sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *)&server, sizeof(server)) < 0) // Envoi de la requête client au serveur
     {
         error("erreur");
     }
 
-    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)     // Gestion du temps d'attente du client en cas de panne de serveur
+    if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) // Gestion du temps d'attente du client en cas de panne de serveur
     {
         return NULL;
     }
@@ -74,15 +69,14 @@ char *request(char *ip, int port, int id, char *name)
     printf("sent : %s\nto %d\n", buffer, port);
 
     // Réception de la réponse de la part du serveur
-    if (recvfrom(sock, buffer, 1024, 0, (struct sockaddr *)&from, &fromlen) < 0)
+    if ((length =recvfrom(sock, buffer, 1024, 0, (struct sockaddr *)&from, &fromlen)) < 0)
     {
         return NULL;
     }
 
-    buffer[strlen(buffer)] = '\0';
+    buffer[length] = '\0';
     printf("received : %s\n\n", buffer);
 
-    close(sock);
     return buffer;
 }
 //#######################################################################
@@ -98,10 +92,10 @@ server_response *parse_server(char *buffer)
 
     res->id = atoi(strtok(buffer, delim1)); // Récupération de l'id
     res->time = atol(strtok(NULL, delim1)); // Récupération de l'horodatage
-    strtok(NULL, delim1); 
+    strtok(NULL, delim1);
     res->code = atoi(strtok(NULL, delim1)); // Réupération du code de retour
 
-    char *matches[res->code]; 
+    char *matches[res->code];
     for (i = 0; i < res->code; i++)
     {
         matches[i] = malloc(300 * sizeof(char)); // Allocation mémoire
@@ -117,8 +111,8 @@ server_response *parse_server(char *buffer)
     for (j = 0; j < res->code; j++)
     {
         strcpy(res->server_list[j].url, strtok(matches[j], delim2)); // Récupération du nom
-        strcpy(res->server_list[j].addr_ip, strtok(NULL, delim2)); // Récupération de l'adresse ip
-        res->server_list[j].port = atoi(strtok(NULL, delim2)); // Récupération du numéro de port
+        strcpy(res->server_list[j].addr_ip, strtok(NULL, delim2));   // Récupération de l'adresse ip
+        res->server_list[j].port = atoi(strtok(NULL, delim2));       // Récupération du numéro de port
         free(matches[j]);
     }
 
@@ -129,9 +123,14 @@ server_response *parse_server(char *buffer)
 
 int main(int argc, char **argv)
 {
-    int id = 1;
+    int sock, id = 1;
     char buffer[255];
     char *received;
+
+    if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) // Initialisation du socket
+    {
+        error("socket");
+    }
 
     // Initialisation des structures
     root_server *rs_tab;
@@ -150,17 +149,17 @@ int main(int argc, char **argv)
 
         for (int i = 0; i < rs_tab->size; i++) // Parcours des serveurs racines
         {
-            if ((received = request(rs_tab->server_list[i].addr_ip, rs_tab->server_list[i].port, id, buffer)) != NULL)
+            if ((received = request(sock, rs_tab->server_list[i].addr_ip, rs_tab->server_list[i].port, id, buffer)) != NULL)
             {
-                s1 = parse_server(received); 
+                s1 = parse_server(received);
                 for (int j = 0; j < s1->code; j++) // Parcours des serveurs domaines
                 {
-                    if ((received = request(s1->server_list[j].addr_ip, s1->server_list[j].port, id + 1, buffer)) != NULL)
+                    if ((received = request(sock, s1->server_list[j].addr_ip, s1->server_list[j].port, id + 1, buffer)) != NULL)
                     {
                         s2 = parse_server(received);
                         for (int k = 0; k < s2->code; k++) // Parcours des serveurs sous domaines
                         {
-                            if ((received = request(s2->server_list[k].addr_ip, s2->server_list[k].port, id + 2, buffer)) != NULL)
+                            if ((received = request(sock, s2->server_list[k].addr_ip, s2->server_list[k].port, id + 2, buffer)) != NULL)
                             {
                                 s3 = parse_server(received);
                                 if (s3->code > 0) // Si on trouve le nom correspondant on termine les 3 boucles
@@ -177,45 +176,55 @@ int main(int argc, char **argv)
             }
         }
     }
-    // else if (argc == 3)
-    // {
-    //     FILE *fd;
-    //     char buffer[1024];
-    //     fd = fopen(argv[2], "r");
+    else if (argc == 3)
+    {
+        FILE *fd;
+        fd = fopen(argv[2], "r");
+        char *buffer = malloc(151* sizeof(char));
+        size_t len = 150;
+        ssize_t read;
 
-    //     while (fgets(buffer, 100, fd) != NULL)
-    //     {
-    //         for (int i = 0; i < rs_tab->size; i++)
-    //         {
-    //             if ((received = request(rs_tab->server_list[i].addr_ip, rs_tab->server_list[i].port, id, buffer)) != NULL)
-    //             {
-    //                 s1 = parse_server(received);
-    //                 for (int j = 0; j < s1->code; j++)
-    //                 {
-    //                     if ((received = request(s1->server_list[j].addr_ip, s1->server_list[j].port, id + 1, buffer)) != NULL)
-    //                     {
-    //                         s2 = parse_server(received);
-    //                         for (int k = 0; k < s2->code; k++)
-    //                         {
-    //                             if ((received = request(s2->server_list[k].addr_ip, s2->server_list[k].port, id + 2, buffer)) != NULL)
-    //                             {
-    //                                 s3 = parse_server(received);
-    //                                 if (s3->code > 0)
-    //                                 {
-    //                                     k = s2->code;
-    //                                     j = s1->code;
-    //                                     i = rs_tab->size;
-    //                                     id += 3;
-    //                                 }
-    //                             }
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }   
-    //     fclose(fd);
-    // }
+        while ((read = getline(&buffer, &len, fd)) >= 0)
+        {
+            if (buffer[read-1]== '\n')
+                buffer[read-1] = '\0';
+            else{
+                buffer[read] = '\0';
+            }
+            
+            for (int i = 0; i < rs_tab->size; i++)
+            {
+                if ((received = request(sock, rs_tab->server_list[i].addr_ip, rs_tab->server_list[i].port, id, buffer)) != NULL)
+                {
+                    s1 = parse_server(received);
+                    for (int j = 0; j < s1->code; j++)
+                    {
+                        if ((received = request(sock, s1->server_list[j].addr_ip, s1->server_list[j].port, id + 1, buffer)) != NULL)
+                        {
+                            s2 = parse_server(received);
+                            for (int k = 0; k < s2->code; k++)
+                            {
+                                if ((received = request(sock, s2->server_list[k].addr_ip, s2->server_list[k].port, id + 2, buffer)) != NULL)
+                                {
+                                    s3 = parse_server(received);
+                                    if (s3->code > 0)
+                                    {
+                                        i = rs_tab->size;
+
+                                        k = s2->code;
+                                        j = s1->code;
+                                        id += 3;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        fclose(fd);
+        free(buffer);
+    }
     else
     {
         printf("Usage:\n    ./client <servers_file>\nor\n    ./client <servers_file> <names_file>\n");
@@ -229,5 +238,6 @@ int main(int argc, char **argv)
     free(s2);
     free(s3);
     free(rs_tab);
+    close(sock);
     return 1;
 }

@@ -1,6 +1,6 @@
 /**
- * \file          server.c
- * \brief       Fonctionnalités coté serveur
+ * @file          server.c
+ * @brief       Fonctionnalités coté serveur
  */
 #include "server.h"
 
@@ -24,15 +24,14 @@ server *readFileName(char *filename)
     struct server *s_tab;
     s_tab = malloc(1000 * sizeof(server));
 
-    fd = fopen(filename, "r");     // Ouverture du fichier
-
+    fd = fopen(filename, "r"); // Ouverture du fichier
 
     while (fgets(buff, 100, fd) != NULL) // Lecture du fichier ligne par ligne
     {
         j = 0;
-        strcpy(s_tab[i].url, strtok(buff, delim1)); // Récupération du nom
+        strcpy(s_tab[i].url, strtok(buff, delim1));     // Récupération du nom
         strcpy(s_tab[i].addr_ip, strtok(NULL, delim1)); // Récupération de l'adresse IP
-        s_tab[i].port = atoi(strtok(NULL, delim1)); // Récupération du numéro de port
+        s_tab[i].port = atoi(strtok(NULL, delim1));     // Récupération du numéro de port
 
         strcpy(temp, s_tab[i].url);
         strcpy(temp2, s_tab[i].url);
@@ -50,13 +49,13 @@ server *readFileName(char *filename)
         else if (j == 1)
         {
             strcpy(s_tab[i].child_domain, strtok(temp2, delim2)); // Récupération du nom de sous domaine
-            strcpy(s_tab[i].domain, strtok(NULL, delim2)); // Récupération du nom de domaine
+            strcpy(s_tab[i].domain, strtok(NULL, delim2));        // Récupération du nom de domaine
         }
         else
         {
-            strcpy(s_tab[i].name, strtok(temp2, delim2)); // Récupération du nom de machine
+            strcpy(s_tab[i].name, strtok(temp2, delim2));        // Récupération du nom de machine
             strcpy(s_tab[i].child_domain, strtok(NULL, delim2)); // Récupération du nom de sous domaine
-            strcpy(s_tab[i].domain, strtok(NULL, delim2)); // Récupération du domaine
+            strcpy(s_tab[i].domain, strtok(NULL, delim2));       // Récupération du domaine
         }
         i++;
     }
@@ -74,7 +73,7 @@ client_response *getresponse(server *s, client_response *cr)
         if (cr->id % 3 == 1 && strcmp(cr->domain, s[i].domain) == 0) // Si c'est la requête vers le serveur racine
         {
             // On stocke les serveurs correspondants à la requête client
-            strcpy(cr->server_list[j].url, s[i].url);  
+            strcpy(cr->server_list[j].url, s[i].url);
             strcpy(cr->server_list[j].addr_ip, s[i].addr_ip);
             cr->server_list[j].port = s[i].port;
             j++;
@@ -108,45 +107,35 @@ client_response *parse_client(char *buffer)
     char delim1[2] = "|";
     char delim2[2] = ".";
 
-    client_response *res; 
+    client_response *res;
     res = malloc(sizeof(client_response));
     res->server_list = malloc(100 * sizeof(server));
 
     res->id = atoi(strtok(buffer, delim1)); // Récupération de l'id de la requête client
     res->time = atol(strtok(NULL, delim1)); // Récupération de l'horodatage
 
-    strcpy(temp, strtok(NULL, delim1)); 
+    strcpy(temp, strtok(NULL, delim1));
     strcpy(res->buffer, temp);
 
-    strcpy(res->name, strtok(temp, delim2)); // Récupération du nom
+    strcpy(res->name, strtok(temp, delim2));         // Récupération du nom
     strcpy(res->child_domain, strtok(NULL, delim2)); // Récupération du sous domaine
-    strcpy(res->domain, strtok(NULL, delim2)); // Récupération du domaine
+    strcpy(res->domain, strtok(NULL, delim2));       // Récupération du domaine
 
     return res;
 }
 //#######################################################################
 
-client_response *receive(int sock, int port)
+client_response *receive(int sock)
 {
-    struct sockaddr_in server;
     socklen_t fromlen;
     int length;
     char buffer[1024];
     struct sockaddr_in from;
     client_response *cr;
 
-    fromlen = sizeof(struct sockaddr_in);
-
-    memset(&server, 0, sizeof(server));
     memset(buffer, 0, strlen(buffer));
-    server.sin_family = AF_INET;
-    server.sin_port = htons(port); // Initialisation du port passé en paramètre
-    server.sin_addr.s_addr = htonl(INADDR_ANY); 
 
-    if (bind(sock, (struct sockaddr *)&server, sizeof(server)) < 0)
-    {
-        error("bind failed");
-    }
+    fromlen = sizeof(struct sockaddr_in);
 
     if ((length = recvfrom(sock, buffer, sizeof(buffer) - 1, 0, (struct sockaddr *)&from, &fromlen)) < 0) // Réception de la requête client
     {
@@ -154,7 +143,9 @@ client_response *receive(int sock, int port)
     }
     printf("received : %s\n", buffer);
 
-    cr = parse_client(buffer); 
+    buffer[length]= '\0';
+
+    cr = parse_client(buffer);
     cr->from = from;
     return cr;
 }
@@ -173,7 +164,7 @@ void respond(int sock, client_response *cr)
 
     for (int i = 0; i < cr->code; i++)
     {
-        snprintf(temp, 1024, "|%s,%s,%d", cr->server_list[i].url, cr->server_list[i].addr_ip, cr->server_list[i].port); 
+        snprintf(temp, 1024, "|%s,%s,%d", cr->server_list[i].url, cr->server_list[i].addr_ip, cr->server_list[i].port);
         strcat(resp, temp); // Concaténation de la liste des serveurs correspondants à la requête client
     }
 
@@ -188,6 +179,7 @@ void respond(int sock, client_response *cr)
 int main(int argc, char **argv)
 {
     int sock;
+    struct sockaddr_in server;
     struct server *s_tab;
     client_response *res;
 
@@ -197,16 +189,31 @@ int main(int argc, char **argv)
         exit(1);
     }
 
+    
+
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) // Initialisation du socket
     {
         error("Opening socket");
     }
 
-    s_tab = readFileName(argv[2]); // Lecture du fichier serveur
+    memset(&server, 0, sizeof(server));
+    server.sin_family = AF_INET;
+    server.sin_port = htons(atoi(argv[1])); // Initialisation du port passé en paramètre
+    server.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    res = receive(sock, atoi(argv[1])); // Réception de la requête client
-    res = getresponse(s_tab, res); // Formatage de la réponse
-    respond(sock, res); // Envoi de la réponse
+    if (bind(sock, (struct sockaddr *)&server, sizeof(server)) < 0)
+    {
+        error("bind failed");
+    }
+
+    s_tab = readFileName(argv[2]);      // Lecture du fichier serveur
+
+    while (1)
+    {
+        res = receive(sock);        // Réception de la requête client
+        res = getresponse(s_tab, res);      // Formatage de la réponse
+        respond(sock, res);                 // Envoi de la réponse
+    }
 
     free(s_tab);
     free(res);

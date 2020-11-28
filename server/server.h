@@ -8,6 +8,11 @@
  *
  */
 
+/**
+ * @file          server.h
+ * @brief       Prototypes de fonctionnalités coté serveur
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -72,10 +77,9 @@ server * readFileName(char * filename);
  * @brief Reception de la requete client
  * 
  * @param sock Descripteur de socket
- * @param port Numéro de port
  * @return client_response* 
  */
-client_response *receive(int sock,  int port);
+client_response *receive(int sock);
 
 /**
  * @brief Parsing de la requete client pour pouvoir la stocker dans la structue client_response

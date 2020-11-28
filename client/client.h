@@ -1,3 +1,7 @@
+/**
+ * @file          client.h
+ * @brief       Prototypes de fonctionnalités coté client
+ */
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -61,7 +65,7 @@ struct root_server * readFileRoot(char * filename);
  * @param name 
  * @return char* 
  */
-char *request(char *ip, int port, int id, char *name);
+char *request(int sock, char *ip, int port, int id, char *name);
 
 /**
  * @brief Parsing de la réponse du serveur pour remplir la structure de réponse
