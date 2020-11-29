@@ -2,7 +2,6 @@ CC=gcc
 CFLAGS=-Wextra -Wall
 
 all: clean serverprog clientprog
-	./kill.sh
 	@echo Compiled successfully !
 
 serverprog: server/server.c server/server.h
@@ -13,6 +12,7 @@ clientprog: client/client.c client/client.h
 
 clean:
 	rm -rf server/serv client/cli latex html latex doc.html saissaoui-mahras.tar.gz rtf man man3
+	./kill.sh
 
 dist :  clean
 	tar -zcvf saissaoui-mahras.tar.gz client/* server/* makefile Rapport.pdf Doxyfile script.sh
