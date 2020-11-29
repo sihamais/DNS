@@ -2,6 +2,7 @@ CC=gcc
 CFLAGS=-Wextra -Wall
 
 all: clean serverprog clientprog
+	./kill.sh
 	@echo Compiled successfully !
 
 serverprog: server/server.c server/server.h

@@ -51,7 +51,7 @@ char *request(int sock, char *ip, int port, int id, char *name)
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     inet_pton(AF_INET, ip, &(server.sin_addr.s_addr)); // Initialisation de l'adresse IP passée en paramètre
-    server.sin_port = htons(port); // Initialisation du numéro de port passé en paramètre
+    server.sin_port = htons(port);               // Initialisation du numéro de port passé en paramètre
 
     fromlen = sizeof(struct sockaddr_in);
 
@@ -59,7 +59,8 @@ char *request(int sock, char *ip, int port, int id, char *name)
 
     if (sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *)&server, sizeof(server)) < 0) // Envoi de la requête client au serveur
     {
-        error("erreur");
+        perror("erreur");
+        return NULL;
     }
 
     if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) // Gestion du temps d'attente du client en cas de panne de serveur
@@ -73,8 +74,7 @@ char *request(int sock, char *ip, int port, int id, char *name)
     if ((length = recvfrom(sock, buffer, 1024, 0, (struct sockaddr *)&from, &fromlen)) < 0)
     {
         strcat(buffer, "|-1");
-        printf("received : %s\n", buffer);
-        printf("timeout %d\n\n", port);
+        printf("timeout %d : %s\n\n", port, buffer);
         return NULL;
     }
 
@@ -133,9 +133,7 @@ int main(int argc, char **argv)
     char *received;
 
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) // Initialisation du socket
-    {
         error("socket");
-    }
 
     // Initialisation des structures
     root_server *rs_tab;
@@ -263,8 +261,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        printf("Usage:\n    ./client <servers_file>\nor\n    ./client <servers_file> <names_file>\n");
-        exit(1);
+        error("Usage:\n    ./cli <servers_file>\nor\n    ./cli <servers_file> <names_file>\n");
     }
 
     free(rs_tab);
