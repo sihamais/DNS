@@ -1,2 +1,2 @@
 killall serv
-echo All the servers are dead !
+echo All the servers are dead

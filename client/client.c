@@ -194,7 +194,6 @@ void launch(int sock, root_server *rs_tab, char *buffer, int id)
         {
             rs_tab->server_list[i].on = 0;
         }
-        id += 3;
     }
 }
 

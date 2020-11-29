@@ -168,7 +168,7 @@ void receive_send(int sock, server* s)
 
 int main(int argc, char **argv)
 {
-    int sock;  // we want v6-only mode disabled, which is to say we want v6-to-v4 compatibility
+    int sock; 
     struct sockaddr_in server;
     struct server *s_tab;
 

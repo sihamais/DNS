@@ -93,6 +93,12 @@ char *request(int sock, char *ip, int port, int id, char *name);
  */
 struct server_response * parse_server(char * buffer);
 
-
-
-
+/**
+ * @brief  Lance le traitement des requêtes. Cette fonction regroupe les autres fonctions.
+ * 
+ * @param sock
+ * @param rs_tab
+ * @param buffer
+ * @param id
+ */
+void launch(int sock, root_server *rs_tab, char *buffer, int id);
