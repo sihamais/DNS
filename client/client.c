@@ -9,6 +9,23 @@ void error(char *msg)
     perror(msg);
     exit(0);
 }
+
+int performance(perf *f, int nb_servers)
+{
+    for (int i = 0; i < nb_servers; i++)
+    {
+        printf("server %d : \n  ip : %s\n   port : %d\n performance : %ld\n\n", i, f->s.addr_ip, f->s.port, f->received - f->sent);
+    }
+
+    if (f->perf[f->calls] > f->perf[f->calls - 1])
+    {
+        return 0;
+    }
+    else
+    {
+        return 1;
+    }
+}
 //#######################################################################
 
 root_server *readFileRoot(char *filename)
@@ -51,7 +68,7 @@ char *request(int sock, char *ip, int port, int id, char *name)
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     inet_pton(AF_INET, ip, &(server.sin_addr.s_addr)); // Initialisation de l'adresse IP passée en paramètre
-    server.sin_port = htons(port);               // Initialisation du numéro de port passé en paramètre
+    server.sin_port = htons(port);                     // Initialisation du numéro de port passé en paramètre
 
     fromlen = sizeof(struct sockaddr_in);
 
@@ -126,20 +143,71 @@ server_response *parse_server(char *buffer)
 }
 //#######################################################################
 
+void launch(int sock, root_server *rs_tab, char *buffer, int id)
+{
+    char *received;
+    server_response *s1;
+    server_response *s2;
+    server_response *s3;
+
+    for (int i = 0; i < rs_tab->size && rs_tab->server_list[i].on != 0; i++) // Parcours des serveurs racines
+    {
+        if ((received = request(sock, rs_tab->server_list[i].addr_ip, rs_tab->server_list[i].port, id, buffer)) != NULL)
+        {
+            s1 = parse_server(received);
+            for (int j = 0; j < s1->code && s1->server_list[j].on != 0; j++) // Parcours des serveurs domaines
+            {
+                if ((received = request(sock, s1->server_list[j].addr_ip, s1->server_list[j].port, id + 1, buffer)) != NULL)
+                {
+                    s2 = parse_server(received);
+                    for (int k = 0; k < s2->code && s2->server_list[k].on != 0; k++) // Parcours des serveurs sous domaines
+                    {
+                        if ((received = request(sock, s2->server_list[k].addr_ip, s2->server_list[k].port, id + 2, buffer)) != NULL)
+                        {
+                            s3 = parse_server(received);
+                            if (s3->code > 0) // Si on trouve le nom correspondant on termine les 3 boucles
+                            {
+                                k = s2->code;
+                                j = s1->code;
+                                i = rs_tab->size;
+                                free(s3->server_list);
+                                free(s3);
+                                free(s2->server_list);
+                                free(s2);
+                                free(s1->server_list);
+                                free(s1);
+                            }
+                        }
+                        else
+                        {
+                            s2->server_list[k].on = 0;
+                        }
+                    }
+                }
+                else
+                {
+                    s1->server_list[j].on = 0;
+                }
+            }
+        }
+        else
+        {
+            rs_tab->server_list[i].on = 0;
+        }
+        id += 3;
+    }
+}
+
 int main(int argc, char **argv)
 {
-    int sock, id = 1;
+    int sock, id= 1;
     char buffer[255];
-    char *received;
 
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) // Initialisation du socket
         error("socket");
 
     // Initialisation des structures
     root_server *rs_tab;
-    server_response *s1;
-    server_response *s2;
-    server_response *s3;
 
     rs_tab = readFileRoot(argv[1]);
     buffer[0] = '\0';
@@ -150,52 +218,8 @@ int main(int argc, char **argv)
         printf("Entrez le nom à résoudre : \n");
         scanf("%s", buffer);
 
-        for (int i = 0; i < rs_tab->size && rs_tab->server_list[i].on != 0; i++) // Parcours des serveurs racines
-        {
-            if ((received = request(sock, rs_tab->server_list[i].addr_ip, rs_tab->server_list[i].port, id, buffer)) != NULL)
-            {
-                s1 = parse_server(received);
-                for (int j = 0; j < s1->code && s1->server_list[j].on != 0; j++) // Parcours des serveurs domaines
-                {
-                    if ((received = request(sock, s1->server_list[j].addr_ip, s1->server_list[j].port, id + 1, buffer)) != NULL)
-                    {
-                        s2 = parse_server(received);
-                        for (int k = 0; k < s2->code && s2->server_list[k].on != 0; k++) // Parcours des serveurs sous domaines
-                        {
-                            if ((received = request(sock, s2->server_list[k].addr_ip, s2->server_list[k].port, id + 2, buffer)) != NULL)
-                            {
-                                s3 = parse_server(received);
-                                if (s3->code > 0) // Si on trouve le nom correspondant on termine les 3 boucles
-                                {
-                                    k = s2->code;
-                                    j = s1->code;
-                                    i = rs_tab->size;
-                                    free(s3->server_list);
-                                    free(s3);
-                                    free(s2->server_list);
-                                    free(s2);
-                                    free(s1->server_list);
-                                    free(s1);
-                                }
-                            }
-                            else
-                            {
-                                s2->server_list[k].on = 0;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        s1->server_list[j].on = 0;
-                    }
-                }
-            }
-            else
-            {
-                rs_tab->server_list[i].on = 0;
-            }
-            id += 3;
-        }
+        launch(sock, rs_tab, buffer, id);
+        id += 3;
     }
     else if (argc == 3)
     {
@@ -208,54 +232,10 @@ int main(int argc, char **argv)
         while ((read = getline(&buffer, &len, fd)) >= 0)
         {
             buffer[strcspn(buffer, "\n")] = '\0';
-
-            for (int i = 0; i < rs_tab->size && rs_tab->server_list[i].on != 0; i++)
-            {
-                if ((received = request(sock, rs_tab->server_list[i].addr_ip, rs_tab->server_list[i].port, id, buffer)) != NULL)
-                {
-                    s1 = parse_server(received);
-                    for (int j = 0; j < s1->code && s1->server_list[j].on != 0; j++)
-                    {
-                        if ((received = request(sock, s1->server_list[j].addr_ip, s1->server_list[j].port, id + 1, buffer)) != NULL)
-                        {
-                            s2 = parse_server(received);
-                            for (int k = 0; k < s2->code && s2->server_list[k].on != 0; k++)
-                            {
-                                if ((received = request(sock, s2->server_list[k].addr_ip, s2->server_list[k].port, id + 2, buffer)) != NULL)
-                                {
-                                    s3 = parse_server(received);
-                                    if (s3->code > 0)
-                                    {
-                                        i = rs_tab->size;
-                                        k = s2->code;
-                                        j = s1->code;
-                                        free(s3->server_list);
-                                        free(s3);
-                                        free(s2->server_list);
-                                        free(s2);
-                                        free(s1->server_list);
-                                        free(s1);
-                                    }
-                                }
-                                else
-                                {
-                                    s2->server_list[k].on = 0;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            s1->server_list[j].on = 0;
-                        }
-                    }
-                }
-                else
-                {
-                    rs_tab->server_list[i].on = 0;
-                }
-            }
+            launch(sock, rs_tab, buffer, id);
             id += 3;
         }
+
         fclose(fd);
         free(buffer);
     }
