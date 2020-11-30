@@ -55,6 +55,7 @@ typedef struct client_response{
 	char name[100];
 	char child_domain[100];
 	char domain[100];
+	struct sockaddr_in  from;
 	server * server_list;
 }client_response;
 
@@ -74,13 +75,12 @@ void error(char *msg);
 server * readFileName(char * filename);
 
 /**
- * @brief Reception et parsing de la requete client, filtrage des bonnes adresses et renvoi de la réponse serveur contenant les bonnes adresses
+ * @brief Reception de la requete client
  * 
  * @param sock Descripteur de socket
- * @param s 	Structure pour stocker les informations des serveurs
  * @return client_response* 
  */
-void receive_send(int sock, server * s);
+client_response *receive(int sock);
 
 /**
  * @brief Parsing de la requete client pour pouvoir la stocker dans la structue client_response
@@ -99,5 +99,12 @@ client_response *parse_client(char *buffer);
  */
 client_response *getresponse(server *s, client_response *cr);
 
+/**
+ * @brief Réponse du server avec les sockets
+ * 
+ * @param sock 
+ * @param cr 
+ */
+void respond(int sock, client_response *cr);
 
 

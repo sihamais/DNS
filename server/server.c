@@ -125,13 +125,11 @@ client_response *parse_client(char *buffer)
 }
 //#######################################################################
 
-void receive_send(int sock, server* s)
+client_response *receive(int sock)
 {
     socklen_t fromlen;
     int length;
     char buffer[1024];
-    char resp[1024];
-    char temp[1024];
     struct sockaddr_in from;
     client_response *cr;
 
@@ -139,7 +137,7 @@ void receive_send(int sock, server* s)
 
     fromlen = sizeof(struct sockaddr_in);
 
-    if ((length = recvfrom(sock, buffer, sizeof(buffer) - 1, 0, (struct sockaddr*)&from, &fromlen)) < 0) // Réception de la requête client
+    if ((length = recvfrom(sock, buffer, sizeof(buffer) - 1, 0, (struct sockaddr *)&from, &fromlen)) < 0) // Réception de la requête client
     {
         error("recvfrom failed");
     }
@@ -147,9 +145,21 @@ void receive_send(int sock, server* s)
 
     buffer[length]= '\0';
 
-    cr = parse_client(buffer); // Appel a la fonction parse_client pour parser la réponse du client
-    cr = getresponse(s, cr); // Appel à la fonction getresponse pour filtrer les bonnes adresses à renvoyer
+    cr = parse_client(buffer);
+    cr->from = from;
+    return cr;
+}
+//#######################################################################
 
+void respond(int sock, client_response *cr)
+{
+    socklen_t fromlen;
+    struct sockaddr_in from;
+    from = cr->from;
+    char resp[1024];
+    char temp[1024];
+
+    fromlen = sizeof(struct sockaddr_in);
     snprintf(resp, 1024, "%d|%ld|%s|%d", cr->id, cr->time, cr->buffer, cr->code); // Création de la réponse à envoyer au client
 
     for (int i = 0; i < cr->code; i++)
@@ -168,9 +178,10 @@ void receive_send(int sock, server* s)
 
 int main(int argc, char **argv)
 {
-    int sock; 
+    int sock;
     struct sockaddr_in server;
     struct server *s_tab;
+    client_response *res;
 
     if (argc != 3)
     {
@@ -180,25 +191,30 @@ int main(int argc, char **argv)
 
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) // Initialisation du socket
     {
-        error("socket failed");
+        error("Opening socket");
     }
 
     memset(&server, 0, sizeof(server));
     server.sin_family = AF_INET;
     server.sin_port = htons(atoi(argv[1])); // Initialisation du port passé en paramètre
-    server.sin_addr.s_addr= INADDR_ANY;
+    server.sin_addr.s_addr = htonl(INADDR_ANY);
 
     if (bind(sock, (struct sockaddr *)&server, sizeof(server)) < 0)
+    {
         error("bind failed");
+    }
 
     s_tab = readFileName(argv[2]);      // Lecture du fichier serveur
 
     while (1)
     {
-        receive_send(sock, s_tab);        // Réception de la requête client
+        res = receive(sock);        // Réception de la requête client
+        res = getresponse(s_tab, res);      // Formatage de la réponse
+        respond(sock, res);                 // Envoi de la réponse
     }
 
     free(s_tab);
+    free(res);
     close(sock);
     return 1;
 }
