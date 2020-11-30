@@ -180,7 +180,7 @@ int main(int argc, char **argv)
 
     if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) // Initialisation du socket
     {
-        error("Opening socket");
+        error("socket failed");
     }
 
     memset(&server, 0, sizeof(server));

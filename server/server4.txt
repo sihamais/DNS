@@ -1,0 +1,5 @@
+example.fr|127.0.0.1|3786
+zombie.fr|118.22.20.157|6796
+zombie.fr|fd16:e5e6:77d1:1c42::|8576
+reseaux.fr|127.0.0.1|9865
+zombie.fr|127.0.0.1|8343

@@ -17,6 +17,7 @@
 #include <strings.h>
 #include <time.h>
 #include <arpa/inet.h>
+#include <sys/time.h>
 #include "../server/server.h"
 
 /**
@@ -39,16 +40,7 @@ typedef struct server_response
 	unsigned long time;
 	int code;
 	server * server_list;
-}server_response;
-
-typedef struct perf
-{
-	server s;
-	time_t * sent;
-	time_t * received;
-	time_t * perf;
-	int calls;
-}perf;
+}server_response, sr;
 
 /**
  * @brief Traitement d'erreur
@@ -64,15 +56,6 @@ void error(char *msg);
  * @return struct root_server* 
  */
 struct root_server * readFileRoot(char * filename);
-
-/**
- * @brief Mesure la performance des serveurs en terme de temps de réponse et retourne 0 si la performance diminue, 1 sinon
- * 
- * @param p 
- * @param nb_servers 
- * @return int 
- */
-int performance (perf *p, int nb_servers);
 
 /**
  * @brief Envoi de la requête client vers le serveur et réception de la réponse
@@ -101,4 +84,4 @@ struct server_response * parse_server(char * buffer);
  * @param buffer
  * @param id
  */
-void launch(int sock, root_server *rs_tab, char *buffer, int id);
+void launch(int sock, root_server *rs_tab, sr *s1, sr * s2, sr * s3, char *buffer, int id);

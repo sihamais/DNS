@@ -1,0 +1,4 @@
+asmae.zombie.fr|126.121.34.243|2245
+siham.zombie.fr|75.133.49.36|8702
+example.zombie.fr|108.110.182.210|3546
+code.zombie.fr|fd4d:a830:cf9b:8f30::|24366
