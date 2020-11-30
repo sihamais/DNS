@@ -157,6 +157,7 @@ int main(int argc, char **argv)
 
         for (int i = 0; i < rs_tab->size && rs_tab->server_list[i].on != 0; i++) // Parcours des serveurs racines
         {
+            printf("%d\n", rs_tab->size);
             if ((received = request(sock, rs_tab->server_list[i].addr_ip, rs_tab->server_list[i].port, id, buffer)) != NULL)
             {
                 s1 = parse_server(received);
@@ -213,7 +214,6 @@ int main(int argc, char **argv)
         while ((read = getline(&buffer, &len, fd)) >= 0)
         {
             buffer[strcspn(buffer, "\n")] = '\0'; // Remplace le retour à la ligne par un EOF
-
             for (int i = 0; i < rs_tab->size && rs_tab->server_list[i].on != 0; i++)
             {
                 if ((received = request(sock, rs_tab->server_list[i].addr_ip, rs_tab->server_list[i].port, id, buffer)) != NULL)

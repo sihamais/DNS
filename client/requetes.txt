@@ -1,5 +1,2 @@
-www.c.com
-zombie.c.com
 example.zombie.fr
-code.zombie.fr
 zombie.example.fr
